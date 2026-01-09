@@ -2,3 +2,17 @@
 PyPDF2>=3.0.0
 requests>=2.31.0
 python-dotenv>=1.0.0
+
+# Built-in LLM support (onboarded, no external service needed)
+gpt4all>=2.8.0
+
+# Web GUI (optional, but recommended)
+streamlit>=1.28.0
+
+# Optional: Fine-tuning dependencies (uncomment to use)
+# torch>=2.0.0
+# transformers>=4.30.0
+# datasets>=2.10.0
+# peft>=0.4.0
+# bitsandbytes>=0.40.0
+# unsloth>=2024.1

@@ -16,6 +16,13 @@ except Exception:  # pragma: no cover - optional dependency
 DEFAULT_STOPWORDS = {
     "the", "and", "to", "of", "a", "in", "is", "it", "that", "for",
     "on", "with", "as", "are", "this", "by", "an", "be", "or", "from",
+    "at", "have", "has", "had", "do", "does", "did", "will", "would",
+    "could", "should", "can", "may", "might", "must", "shall", "been",
+    "being", "have", "has", "he", "she", "it", "we", "they", "you",
+    "i", "me", "him", "her", "us", "them", "which", "who", "what",
+    "when", "where", "why", "how", "all", "each", "every", "both",
+    "few", "more", "most", "other", "some", "such", "only", "same",
+    "so", "than", "too", "very", "not", "no", "nor", "just", "even",
 }
 
 word_re = re.compile(r"\b[0-9A-Za-z']+\b")
@@ -47,12 +54,17 @@ def compute_stats(text: str, top_n: int = 10, stopwords: set | None = None) -> D
     lines = text.count("\n") + (1 if text and not text.endswith("\n") else 0)
     words = word_re.findall(text.lower())
     word_count = len(words)
+    
     freqs: Dict[str, int] = {}
     for w in words:
-        if w in stopwords:
+        # Skip stopwords and very short words
+        if w in stopwords or len(w) < 2:
             continue
         freqs[w] = freqs.get(w, 0) + 1
-    top = sorted(freqs.items(), key=lambda kv: kv[1], reverse=True)[:top_n]
+    
+    # Sort by frequency, prefer meaningful words
+    top = sorted(freqs.items(), key=lambda kv: (-kv[1], -len(kv[0])))[:top_n]
+    
     return {"chars": chars, "lines": lines, "words": word_count, "top_words": top}
 
 
