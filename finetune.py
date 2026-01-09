@@ -10,6 +10,7 @@ import json
 import glob
 from pathlib import Path
 from typing import List, Dict
+from tqdm import tqdm
 
 # Check if required packages are installed
 try:
@@ -18,7 +19,7 @@ try:
     import torch
 except ImportError:
     print("Installing required packages for fine-tuning...")
-    os.system("pip install -q torch transformers datasets bitsandbytes peft unsloth")
+    os.system("pip install -q torch transformers datasets bitsandbytes peft unsloth tqdm")
     print("Packages installed. Run the script again.")
     exit(1)
 
@@ -28,24 +29,24 @@ def collect_training_data() -> List[str]:
     training_texts = []
     
     # Collect Python files
-    for py_file in glob.glob("*.py"):
-        if py_file == "finetune.py":
-            continue
+    py_files = glob.glob("*.py")
+    py_files = [f for f in py_files if f != "finetune.py"]
+    
+    for py_file in tqdm(py_files, desc="Loading Python files", unit="file"):
         try:
             with open(py_file, "r", encoding="utf-8") as f:
                 content = f.read()
                 training_texts.append(f"## File: {py_file}\n{content}")
-                print(f"✓ Loaded {py_file}")
         except Exception as e:
             print(f"✗ Error loading {py_file}: {e}")
     
     # Collect markdown files
-    for md_file in glob.glob("*.md"):
+    md_files = glob.glob("*.md")
+    for md_file in tqdm(md_files, desc="Loading documentation", unit="file"):
         try:
             with open(md_file, "r", encoding="utf-8") as f:
                 content = f.read()
                 training_texts.append(f"## Documentation: {md_file}\n{content}")
-                print(f"✓ Loaded {md_file}")
         except Exception as e:
             print(f"✗ Error loading {md_file}: {e}")
     
@@ -53,11 +54,10 @@ def collect_training_data() -> List[str]:
     try:
         with open(".assistant_memory.json", "r") as f:
             memory = json.load(f)
-            # Create training examples from past conversations
-            for msg in memory.get("messages", []):
+            messages = memory.get("messages", [])
+            for msg in tqdm(messages, desc="Loading conversation history", unit="msg"):
                 if msg.get("role") == "user":
                     training_texts.append(f"User: {msg.get('text')}")
-            print(f"✓ Loaded conversation history ({len(memory.get('messages', []))} messages)")
     except Exception as e:
         print(f"Note: No conversation history yet ({e})")
     
@@ -84,10 +84,13 @@ def create_dataset(texts: List[str]) -> Dataset:
 def finetune_mistral():
     """Fine-tune Mistral 7B on project data."""
     
-    print("🚀 Starting fine-tuning process...\n")
+    print("\n" + "=" * 70)
+    print("🚀 MISTRAL 7B FINE-TUNING PIPELINE")
+    print("=" * 70 + "\n")
     
     # Step 1: Collect data
-    print("📚 Step 1: Collecting training data...")
+    print("📚 STEP 1: Collecting Training Data")
+    print("-" * 70)
     texts = collect_training_data()
     if not texts:
         print("❌ No training data found. Make sure you have .py and .md files.")
@@ -95,23 +98,27 @@ def finetune_mistral():
     print(f"✓ Collected {len(texts)} text sources\n")
     
     # Step 2: Create dataset
-    print("🔧 Step 2: Creating training dataset...")
+    print("🔧 STEP 2: Creating Training Dataset")
+    print("-" * 70)
     dataset = create_dataset(texts)
     dataset = dataset.train_test_split(test_size=0.1)
     print(f"✓ Train: {len(dataset['train'])} samples")
     print(f"✓ Test: {len(dataset['test'])} samples\n")
     
     # Step 3: Load model and tokenizer
-    print("⚙️  Step 3: Loading Mistral 7B...")
+    print("⚙️  STEP 3: Loading Mistral 7B")
+    print("-" * 70)
     model_name = "mistralai/Mistral-7B-v0.1"
     
     try:
+        print("Downloading tokenizer...")
         tokenizer = AutoTokenizer.from_pretrained(model_name)
         print(f"✓ Loaded tokenizer")
         
         # For efficient fine-tuning, use 4-bit quantization
         from transformers import BitsAndBytesConfig
         
+        print("Configuring 4-bit quantization...")
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_use_double_quant=True,
@@ -119,6 +126,7 @@ def finetune_mistral():
             bnb_4bit_compute_dtype=torch.float16,
         )
         
+        print("Downloading model (~15GB, this may take a few minutes)...")
         model = AutoModelForCausalLM.from_pretrained(
             model_name,
             quantization_config=bnb_config,
@@ -131,7 +139,8 @@ def finetune_mistral():
         return
     
     # Step 4: Tokenize data
-    print("🔤 Step 4: Tokenizing dataset...")
+    print("🔤 STEP 4: Tokenizing Dataset")
+    print("-" * 70)
     def tokenize_function(examples):
         return tokenizer(
             examples["text"],
@@ -140,15 +149,18 @@ def finetune_mistral():
             max_length=512,
         )
     
+    print("Tokenizing training examples...")
     tokenized_datasets = dataset.map(
         tokenize_function,
         batched=True,
         num_proc=4,
+        desc="Tokenizing",
     )
     print(f"✓ Tokenized {len(tokenized_datasets['train'])} training examples\n")
     
     # Step 5: Fine-tune with LoRA (efficient)
-    print("🎯 Step 5: Applying LoRA for efficient fine-tuning...")
+    print("🎯 STEP 5: Applying LoRA (Low-Rank Adaptation)")
+    print("-" * 70)
     try:
         from peft import LoraConfig, get_peft_model
         
@@ -161,12 +173,13 @@ def finetune_mistral():
         )
         
         model = get_peft_model(model, lora_config)
-        print(f"✓ LoRA configured\n")
+        print(f"✓ LoRA configured (efficient training, smaller file size)\n")
     except ImportError:
-        print("⚠️  PEFT not available, using full fine-tuning (slower)\n")
+        print("⚠️  PEFT not available, using full fine-tuning (slower/larger)\n")
     
-    # Step 6: Training
-    print("🏃 Step 6: Starting training (this may take 30-60 minutes)...")
+    # Step 6: Training with progress bar
+    print("🏃 STEP 6: FINE-TUNING (3 epochs)")
+    print("-" * 70)
     
     training_args = TrainingArguments(
         output_dir="./models/mistral-finetuned",
@@ -175,12 +188,13 @@ def finetune_mistral():
         per_device_eval_batch_size=4,
         save_steps=10,
         eval_steps=10,
-        logging_steps=10,
+        logging_steps=5,
         learning_rate=2e-4,
         weight_decay=0.01,
         save_total_limit=2,
         load_best_model_at_end=True,
         warmup_steps=100,
+        report_to=[],  # Disable wandb
     )
     
     trainer = Trainer(
@@ -192,28 +206,43 @@ def finetune_mistral():
     )
     
     try:
+        print("\nTraining progress:\n")
         trainer.train()
-        print("✅ Fine-tuning complete!\n")
+        print("\n✅ Fine-tuning complete!\n")
         
         # Save the model
-        print("💾 Saving fine-tuned model...")
+        print("💾 STEP 7: Saving Fine-Tuned Model")
+        print("-" * 70)
         model.save_pretrained("./models/mistral-finetuned")
         tokenizer.save_pretrained("./models/mistral-finetuned")
         print("✓ Model saved to ./models/mistral-finetuned\n")
         
         # Update environment
         os.environ["FINETUNE_MODEL_PATH"] = "./models/mistral-finetuned"
-        print("✅ Fine-tuned model ready to use!")
-        print("Restart the web UI to use it: streamlit run web_ui.py")
+        
+        print("=" * 70)
+        print("✅ SUCCESS! Fine-tuned Model Ready")
+        print("=" * 70)
+        print("\nNext steps:")
+        print("1. Restart the web UI: streamlit run web_ui.py")
+        print("2. Your custom model will be used automatically")
+        print("3. It understands your specific codebase and patterns\n")
         
     except Exception as e:
         print(f"❌ Training error: {e}")
         print("You may need more GPU memory or to reduce batch size")
+        print("See FINETUNE.md for troubleshooting tips")
 
 
 if __name__ == "__main__":
-    print("=" * 60)
-    print("🤖 Mistral 7B Fine-Tuning on Your Project")
-    print("=" * 60 + "\n")
+    print("\n" + "=" * 70)
+    print("🤖 MISTRAL 7B FINE-TUNING ON YOUR PROJECT")
+    print("=" * 70)
+    print("\nThis will:")
+    print("  1. Collect your code, docs, and conversation history")
+    print("  2. Download Mistral 7B (~15GB)")
+    print("  3. Fine-tune for 3 epochs (~30-60 min on GPU)")
+    print("  4. Save custom model to ./models/mistral-finetuned")
+    print("=" * 70 + "\n")
     
     finetune_mistral()

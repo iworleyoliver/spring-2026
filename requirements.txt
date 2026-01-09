@@ -9,6 +9,9 @@ gpt4all>=2.8.0
 # Web GUI (optional, but recommended)
 streamlit>=1.28.0
 
+# Progress bars and utilities
+tqdm>=4.65.0
+
 # Optional: Fine-tuning dependencies (uncomment to use)
 # torch>=2.0.0
 # transformers>=4.30.0
