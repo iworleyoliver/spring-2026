@@ -1,90 +1,72 @@
-# spring-2026
-coding python
+# Spring 2026 - Local AI Assistant
 
-here you go ms. Carter
+An AI-powered assistant that runs entirely on your computer. No cloud services, no API keys (unless you choose to use them).
+
+**👤 Not a developer?** → See [USER_GUIDE.md](USER_GUIDE.md) for step-by-step instructions
+
+## ✨ Features
+
+- 💬 **Chat** with an AI that remembers your conversation
+- 📄 **Analyze** documents, PDFs, and code files  
+- ✨ **Generate** content from text descriptions
+- 🔐 **Fully Private** - Everything runs locally
 
 ## 🚀 Quick Start
 
-**Not a developer?** → See [USER_GUIDE.md](USER_GUIDE.md) for simple instructions
-
-**Developer?** → Continue below
-
-## 🤖 What This Is
-
-An AI-powered assistant that runs locally on your computer:
-- 💬 **Chat** with an AI that remembers your conversation
-- 📄 **Analyze** documents, PDFs, and code files
-- ✨ **Generate** content from text descriptions
-- 🔐 **Private** - Everything runs locally, nothing leaves your computer
-
-## LLM Setup
-
-### Option 1: GPT4All (Recommended - Built-in, Auto-Download, No Setup)
-
-The easiest way to get started. GPT4All automatically downloads a model on first use.
-
-```bash
-pip install -r requirements.txt
-python3 project_tool.py assistant-chat "Hello!"  # Downloads Mistral 7B on first run
-```
-
-That's it! No API keys, no external services needed.
-
-### Option 2: Ollama (Local, Open Source, No API Key)
-
-For more control or using different models:
-
-1. Install Ollama from [ollama.ai](https://ollama.ai)
-2. Start the Ollama server:
-```bash
-ollama serve
-```
-3. In another terminal, pull a model:
-```bash
-ollama pull mistral  # or llama2, neural-chat, etc.
-```
-4. The assistant will automatically use Ollama when available
-
-Optional: Set a custom model:
-```bash
-export OLLAMA_MODEL="llama2"
-export OLLAMA_URL="http://localhost:11434"
-```
-
-### Option 3: OpenRouter (Cloud, Requires API Key)
-
-For more powerful models in the cloud:
-
-1. Get an API key at [openrouter.io](https://openrouter.io)
-2. Create a `.env` file:
-```bash
-echo "OPENROUTER_API_KEY=your-openrouter-api-key-here" > .env
-```
-3. Optional: Set a custom model:
-```bash
-export OPENROUTER_MODEL="openai/gpt-4"
-```
-
-### Setup
-
-Install dependencies:
+### Installation
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Use the Assistant
+### Run the Web Interface (Recommended)
 
-**Option 1: Web GUI (Recommended)**
 ```bash
 streamlit run web_ui.py
 ```
-Opens an interactive web interface in your browser at `http://localhost:8501`
 
-**Option 2: Command Line**
+Opens at `http://localhost:8501`
+
+### Run from Command Line
+
 ```bash
+python3 project_tool.py assistant-chat "Hello!"
 python3 project_tool.py assistant-analyze-add README.md
-python3 project_tool.py assistant-chat "Summarize recent analyses"
 ```
 
-Be careful not to commit `.env` with secrets to your repository.
+## 🤖 LLM Backend Options
+
+### GPT4All (Default - Recommended)
+
+Easiest option. Automatically downloads on first use, no setup required.
+
+```bash
+python3 project_tool.py assistant-chat "Hello!"  # Downloads model on first run
+```
+
+- ✅ Works offline
+- ✅ No API key needed
+- ✅ Auto-downloads Mistral 7B (~4GB)
+
+### Ollama (Local, Open Source)
+
+For more control or different models:
+
+```bash
+ollama serve          # Start Ollama
+ollama pull mistral   # Pull a model
+export OLLAMA_MODEL="mistral"
+```
+
+### OpenRouter (Cloud - Optional)
+
+For more powerful models:
+
+```bash
+echo "OPENROUTER_API_KEY=your-key-here" > .env
+export OPENROUTER_MODEL="openai/gpt-4"
+```
+
+Get an API key at [openrouter.io](https://openrouter.io)
+
+⚠️ **Never commit `.env` with API keys to GitHub**
