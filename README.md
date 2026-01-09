@@ -3,9 +3,21 @@ coding python
 
 here you go ms. Carter
 
-## LLM Setup
+## 🚀 Quick Start
 
-The assistant supports multiple LLM backends (tries them in order):
+**Not a developer?** → See [USER_GUIDE.md](USER_GUIDE.md) for simple instructions
+
+**Developer?** → Continue below
+
+## 🤖 What This Is
+
+An AI-powered assistant that runs locally on your computer:
+- 💬 **Chat** with an AI that remembers your conversation
+- 📄 **Analyze** documents, PDFs, and code files
+- ✨ **Generate** content from text descriptions
+- 🔐 **Private** - Everything runs locally, nothing leaves your computer
+
+## LLM Setup
 
 ### Option 1: GPT4All (Recommended - Built-in, Auto-Download, No Setup)
 
