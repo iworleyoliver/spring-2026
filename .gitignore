@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+.venv/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific
+.assistant_memory.json
+generated_README.md
+*.log
+
+# Models (large, regenerate with finetune.py)
+models/mistral-finetuned/
+
+# Environment variables
+.env
+.env.local
+
+# Cache
+.cache/
+*.cache
